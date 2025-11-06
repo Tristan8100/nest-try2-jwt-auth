@@ -9,6 +9,7 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { EmailVerification } from './entities/email-verification.entity';
+import { transporter } from '../../lib/transporter';
 
 @Injectable()
 export class AuthService {
@@ -27,14 +28,52 @@ export class AuthService {
     private async sendVerificationCode(email: string) {
         const val = Math.floor(100000 + Math.random() * 900000).toString();
 
-        const val2 = this.emailVerificationRepository.create({
-            email: email,
-            code: val,
-        })
+        // Check if record already exists for this email
+        const existing = await this.emailVerificationRepository.findOne({
+            where: { email },
+        });
 
-        await this.emailVerificationRepository.save(val2);
+        if (existing) {
+            // Update existing record
+            await this.emailVerificationRepository.update(
+            { email: email },
+            { code: val }
+            );
+        } else {
+            // Create new record
+            const newRecord = this.emailVerificationRepository.create({
+            email,
+            code: val,
+            });
+            await this.emailVerificationRepository.save(newRecord);
+        }
+
         // SEND EMAIL
-        return val;
+         try {
+            await transporter.sendMail({
+                from: `"ECHOMIND" <${process.env.MAIL_FROM_ADDRESS}>`,
+                to: email,
+                subject: 'Your Echomind Verification Code',
+                html: `
+                <div style="font-family: Arial, sans-serif; padding: 16px; border-radius: 8px; background: #f9f9f9;">
+                    <h2 style="color:#333;">Verify your email</h2>
+                    <p>Hey there 👋,</p>
+                    <p>Your verification code is:</p>
+                    <div style="font-size: 22px; font-weight: bold; letter-spacing: 2px; color: #2563eb;">
+                    ${val}
+                    </div>
+                    <p>This code will expire in 10 minutes.</p>
+                    <p>– The Echomind Team</p>
+                </div>
+                `,
+            });
+
+            console.log(`✅ Verification email sent to ${email}`);
+            } catch (err) {
+            console.error(`❌ Failed to send verification email to ${email}:`, err);
+            }
+
+            return val;
     }
 
     async signIn(email: string, password: string): Promise<any> {
@@ -58,8 +97,9 @@ export class AuthService {
         }
     }
 
-    async register(register: CreateUserDto): Promise<User> {
+    async register(register: CreateUserDto): Promise<any> {
         const user = await this.usersService.create(register);
-        return user;
+        const val =await this.sendVerificationCode(user.email);
+        return val;
     }
 }

@@ -20,4 +20,10 @@ export class AuthController {
     getProtectedResource(@Request() req) {
         return { message: 'This is a protected resource', user: req.user };
     }
+
+    @Post('register')
+    register(@Body() registerDto) {
+        const val = this.authService.register(registerDto);
+        return val;
+    }
 }
