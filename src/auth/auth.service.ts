@@ -10,6 +10,8 @@ import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { EmailVerification } from './entities/email-verification.entity';
 import { transporter } from '../../lib/transporter';
+import { SendOtpDto } from './dto/send-otp-dto';
+import { send } from 'process';
 
 @Injectable()
 export class AuthService {
@@ -84,6 +86,10 @@ export class AuthService {
         if(!user){
             throw new UnauthorizedException('User not found');
         } else {
+            if(!user.email_verified_at){
+                throw new UnauthorizedException('Email not verified');
+            }
+
             const isMatch = await bcrypt.compare(password, user.password);
 
             if (!isMatch) {
@@ -101,5 +107,49 @@ export class AuthService {
         const user = await this.usersService.create(register);
         const val =await this.sendVerificationCode(user.email);
         return val;
+    }
+
+    async sendOtp(sendOtpDto: SendOtpDto): Promise<any> {
+        const user = await this.usersRepository.findOne({
+            where: { email: sendOtpDto.email },
+        });
+
+        if(!user){
+            throw new UnauthorizedException('User not found');
+        } if(user.email_verified_at){
+            throw new UnauthorizedException('Email already verified');
+        }
+
+        const val = await this.sendVerificationCode(sendOtpDto.email);
+        return { message: 'OTP sent successfully', code: val };
+    }
+
+    async verifyEmail(email: string, code: string): Promise<any> {
+        const record = await this.emailVerificationRepository.findOne({
+            where: { email, code },
+        });
+
+        const [{ now }] = await this.emailVerificationRepository.query('SELECT NOW() as now'); // REALTIME
+        const dbNow = new Date(now).getTime();
+
+        if (!record) {
+            console.log(record);
+            console.log(email, code);
+            throw new UnauthorizedException('Invalid verification code');
+        } else if (record.updated_at.getTime() + 10 * 60 * 1000 < dbNow) {
+            throw new UnauthorizedException('Verification code expired');
+        }
+
+        console.log("db record time" + record.updated_at.getTime());
+        console.log("current time" + dbNow);
+
+        const user = await this.usersRepository.update(
+            { email: email },
+            { email_verified_at: new Date() }
+        )
+
+        await this.emailVerificationRepository.delete({ email });
+
+        return { message: 'Email verified successfully' };
     }
 }

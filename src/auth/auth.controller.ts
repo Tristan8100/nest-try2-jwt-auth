@@ -4,6 +4,8 @@ import { AuthService } from './auth.service';
 import { json } from 'stream/consumers';
 import { AuthGuard } from './auth.guard';
 import { UseGuards } from '@nestjs/common';
+import { SendOtpDto, VerifyEmailDto } from './dto/send-otp-dto';
+import { Send } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -24,6 +26,18 @@ export class AuthController {
     @Post('register')
     register(@Body() registerDto) {
         const val = this.authService.register(registerDto);
+        return val;
+    }
+
+    @Post('send-otp')
+    sendOtp(@Body() data : SendOtpDto) {
+        const val = this.authService.sendOtp(data);
+        return val;
+    }
+
+    @Post('verify-email')
+    verifyEmail(@Body() data : VerifyEmailDto) {
+        const val = this.authService.verifyEmail(data.email, data.code);
         return val;
     }
 }
