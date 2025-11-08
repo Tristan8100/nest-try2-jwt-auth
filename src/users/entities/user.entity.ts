@@ -20,7 +20,7 @@ export class User {
   @Column()
   password: string;
 
-  @Column({ type: 'timestamp', nullable: true, default: null })
+  @CreateDateColumn({nullable: true})
   email_verified_at: Date | null;
 
   @CreateDateColumn()

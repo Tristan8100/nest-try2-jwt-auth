@@ -32,6 +32,7 @@ export class UsersService {
       email: createUserDto.email,
       name: createUserDto.name,
       password: await bcrypt.hash(createUserDto.password, 10),
+      email_verified_at: null,
     });
     return val;
   }
