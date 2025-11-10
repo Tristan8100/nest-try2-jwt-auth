@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service'; 
 import { SignInDto } from './dto/sign-in-dto';
 import { JwtService } from '@nestjs/jwt';
@@ -10,8 +10,10 @@ import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { EmailVerification } from './entities/email-verification.entity';
 import { transporter } from '../../lib/transporter';
-import { SendOtpDto } from './dto/send-otp-dto';
+import { ResetPasswordDto, SendOtpDto, VetifyCodeDto } from './dto/send-otp-dto';
 import { send } from 'process';
+import { PasswordReset } from './entities/password-reset.entity';
+import crypto from "crypto";
 
 @Injectable()
 export class AuthService {
@@ -21,6 +23,8 @@ export class AuthService {
         private usersRepository: Repository<User>,
         @InjectRepository(EmailVerification)
         private emailVerificationRepository: Repository<EmailVerification>,
+        @InjectRepository(PasswordReset)
+        private passwordResetRepository: Repository<PasswordReset>,
 
         // SERVICES
         private usersService: UsersService,
@@ -71,11 +75,10 @@ export class AuthService {
             });
 
             console.log(`✅ Verification email sent to ${email}`);
-            } catch (err) {
+        } catch (err) {
             console.error(`❌ Failed to send verification email to ${email}:`, err);
-            }
-
-            return val;
+        }
+        return val;
     }
 
     async signIn(email: string, password: string): Promise<any> {
@@ -151,5 +154,127 @@ export class AuthService {
         await this.emailVerificationRepository.delete({ email });
 
         return { message: 'Email verified successfully' };
+    }
+
+    async resetLink(sendResetLink: SendOtpDto): Promise<any>{
+        const email = sendResetLink.email;
+
+        const user = await this.usersRepository.findOne({
+            where: {email: email}
+        });
+
+        if(!user){
+            throw new UnauthorizedException('User not found');
+        }
+
+        const check = await this.passwordResetRepository.findOne(
+            {where: {email: email}}
+        );
+        
+        const code = Math.floor(100000 + Math.random() * 900000);
+
+        if(!check){
+            const data = await this.passwordResetRepository.create({
+                email: email,
+                code: code.toString(),
+            })
+            await this.passwordResetRepository.save(data);
+        } else {
+            await this.passwordResetRepository.update(
+                {email: email},
+                {code: code.toString()}
+            )
+        }
+
+        // SEND EMAIL
+         try {
+            await transporter.sendMail({
+                from: `"ECHOMIND" <${process.env.MAIL_FROM_ADDRESS}>`,
+                to: email,
+                subject: 'Your Echomind Password Reset Code',
+                html: `
+                <div style="font-family: Arial, sans-serif; padding: 16px; border-radius: 8px; background: #f9f9f9;">
+                    <h2 style="color:#333;">Verify your email</h2>
+                    <p>Hey there 👋,</p>
+                    <p>Your password reset code is:</p>
+                    <div style="font-size: 22px; font-weight: bold; letter-spacing: 2px; color: #2563eb;">
+                    ${code.toString()}
+                    </div>
+                    <p>This code will expire in 10 minutes.</p>
+                    <p>– The Echomind Team</p>
+                </div>
+                `,
+            });
+
+            console.log(`✅ Verification email sent to ${email}`);
+        } catch (err) {
+            console.error(`❌ Failed to send verification email to ${email}:`, err);
+        }
+
+        return {message: 'Password reset link sent successfully', email: email, code: code.toString()};
+    }
+
+    async verifyResetCode(data: VetifyCodeDto): Promise<any> {
+        const { email, code } = data
+
+        const record = await this.passwordResetRepository.findOne({
+            where: {
+                email: email,
+                code: code,
+            }
+        })
+
+        if(!record){
+            throw new NotFoundException('Invalid reset code or email');
+        }
+
+        const [{ now }] = await this.emailVerificationRepository.query('SELECT NOW() as now'); // REALTIME
+        const dbNow = new Date(now).getTime();
+
+        if (record.updated_at.getTime() + 10 * 60 * 1000 < dbNow) {
+            throw new UnauthorizedException('Verification code expired');
+        }
+
+        const token = crypto.randomBytes(30).toString("hex");
+        const hashedToken = await bcrypt.hash(token, 10);
+
+
+        const val =await this.passwordResetRepository.update(
+            {email: email},
+            {token: hashedToken}
+        )
+
+        if(!val){
+            throw new UnauthorizedException('Could not generate reset token');
+        }
+        
+        return {message: 'Reset code verified successfully', token: token};
+    }
+
+    async resetPassword(data: ResetPasswordDto): Promise<any> {
+        const { email, token, password } = data;
+
+        const check = await this.passwordResetRepository.findOne({
+            where: {email: email}
+        });
+
+        if(!check){
+            throw new NotFoundException('Invalid reset code or email');
+        }
+
+        const isMatch = await bcrypt.compare(token, check.token);
+
+        if(!isMatch){
+            throw new UnauthorizedException('Invalid reset token');
+        }
+
+        const user = await this.usersRepository.update(
+            {email: email},
+            {password: await bcrypt.hash(password, 10)}
+        )
+
+        await this.passwordResetRepository.delete({email: email});
+
+        return {message: 'Password reset successfully'};
     }
 }

@@ -4,7 +4,7 @@ import { AuthService } from './auth.service';
 import { json } from 'stream/consumers';
 import { AuthGuard } from './auth.guard';
 import { UseGuards } from '@nestjs/common';
-import { SendOtpDto, VerifyEmailDto } from './dto/send-otp-dto';
+import { ResetPasswordDto, SendOtpDto, VerifyEmailDto } from './dto/send-otp-dto';
 import { Send } from 'express';
 
 @Controller('auth')
@@ -38,6 +38,24 @@ export class AuthController {
     @Post('verify-email')
     verifyEmail(@Body() data : VerifyEmailDto) {
         const val = this.authService.verifyEmail(data.email, data.code);
+        return val;
+    }
+
+    @Post('reset-link')
+    resetLink(@Body() data : SendOtpDto) {
+        const val = this.authService.resetLink(data);
+        return val;
+    }
+
+    @Post('verify-reset-code')
+    verifyResetCode(@Body() data : VerifyEmailDto) {
+        const val = this.authService.verifyResetCode(data);
+        return val;
+    }
+
+    @Post('reset-password')
+    resetPassword(@Body() data : ResetPasswordDto) {
+        const val = this.authService.resetPassword(data);
         return val;
     }
 }

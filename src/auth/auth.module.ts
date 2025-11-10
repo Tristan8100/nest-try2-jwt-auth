@@ -7,9 +7,10 @@ import { JwtModule } from '@nestjs/jwt'; // also import this on @module below si
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { jwtConstants } from './constants';
 import { EmailVerification } from './entities/email-verification.entity';
+import { PasswordReset } from './entities/password-reset.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, EmailVerification]),
+  imports: [TypeOrmModule.forFeature([User, EmailVerification, PasswordReset]),
   UsersModule,
   JwtModule.register({
       global: true,
