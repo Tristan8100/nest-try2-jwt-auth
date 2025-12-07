@@ -8,7 +8,7 @@ import { ResetPasswordDto, SendOtpDto, VerifyEmailDto } from './dto/send-otp-dto
 import { Send } from 'express';
 import { RolesGuard } from './auth.user';
 
-@Controller()
+@Controller('api')
 export class AuthController {
     constructor(private authService: AuthService) {}
 
