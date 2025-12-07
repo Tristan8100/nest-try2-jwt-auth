@@ -6,8 +6,9 @@ import { AuthGuard } from './auth.guard';
 import { UseGuards } from '@nestjs/common';
 import { ResetPasswordDto, SendOtpDto, VerifyEmailDto } from './dto/send-otp-dto';
 import { Send } from 'express';
+import { RolesGuard } from './auth.user';
 
-@Controller('auth')
+@Controller()
 export class AuthController {
     constructor(private authService: AuthService) {}
 
@@ -57,5 +58,11 @@ export class AuthController {
     resetPassword(@Body() data : ResetPasswordDto) {
         const val = this.authService.resetPassword(data);
         return val;
+    }
+
+    @UseGuards(AuthGuard, RolesGuard) // for roles
+    @Get('verify-user')
+    setUser(@Request() req) {
+        return this.authService.user(req.user);
     }
 }

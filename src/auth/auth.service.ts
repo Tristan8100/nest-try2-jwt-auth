@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service'; 
 import { SignInDto } from './dto/sign-in-dto';
 import { JwtService } from '@nestjs/jwt';
@@ -77,6 +77,7 @@ export class AuthService {
             console.log(`✅ Verification email sent to ${email}`);
         } catch (err) {
             console.error(`❌ Failed to send verification email to ${email}:`, err);
+            throw new ConflictException("Failed to send verification email");
         }
         return val;
     }
@@ -102,14 +103,30 @@ export class AuthService {
             const payload = { sub: user.id, email: user.email };
             const token = this.jwtService.sign(payload);
 
-            return { message: 'Login success', token };
+            return { 
+                message: 'Login success',
+                token: token,
+                status: "success",
+                response_code: 200,
+                user_info: {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email
+                }
+
+            };
         }
     }
 
     async register(register: CreateUserDto): Promise<any> {
         const user = await this.usersService.create(register);
         const val =await this.sendVerificationCode(user.email);
-        return val;
+        return { 
+            response_code: 200,
+            message: 'Registration success',
+            email: user.email,
+            code: val 
+        };
     }
 
     async sendOtp(sendOtpDto: SendOtpDto): Promise<any> {
@@ -124,7 +141,7 @@ export class AuthService {
         }
 
         const val = await this.sendVerificationCode(sendOtpDto.email);
-        return { message: 'OTP sent successfully', code: val };
+        return { message: 'OTP sent successfully', code: val, email: sendOtpDto.email }; //REMOVE CODE
     }
 
     async verifyEmail(email: string, code: string): Promise<any> {
@@ -156,6 +173,22 @@ export class AuthService {
         return { message: 'Email verified successfully' };
     }
 
+    async user(data: any): Promise<any> {
+        const user = await this.usersRepository.findOne({
+            where: { email: data.email },
+        })
+
+        return { 
+            message: 'User details',
+            user_info: {
+                id: user?.id,
+                name: user?.name,
+                email: user?.email
+            }
+        };
+    }
+
+    // RESET PASSWORDS
     async resetLink(sendResetLink: SendOtpDto): Promise<any>{
         const email = sendResetLink.email;
 
@@ -209,9 +242,11 @@ export class AuthService {
             console.log(`✅ Verification email sent to ${email}`);
         } catch (err) {
             console.error(`❌ Failed to send verification email to ${email}:`, err);
+            throw new InternalServerErrorException('Failed to send verification email');
+            
         }
 
-        return {message: 'Password reset link sent successfully', email: email, code: code.toString()};
+        return {message: 'Password reset link sent successfully', email: email, code: code.toString()}; //remove code
     }
 
     async verifyResetCode(data: VetifyCodeDto): Promise<any> {
