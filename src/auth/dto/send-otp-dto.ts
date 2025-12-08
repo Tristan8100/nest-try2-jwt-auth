@@ -11,7 +11,7 @@ export class VerifyEmailDto{
 
     @IsString()
     @Length(6, 6)
-    code: string;
+    otp: string;
 }
 
 export class VetifyCodeDto{
@@ -20,7 +20,7 @@ export class VetifyCodeDto{
 
     @IsString()
     @Length(6, 6)
-    code: string;
+    otp: string; //changed
 }
 
 export class ResetPasswordDto{

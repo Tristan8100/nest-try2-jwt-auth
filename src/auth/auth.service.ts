@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service'; 
 import { SignInDto } from './dto/sign-in-dto';
 import { JwtService } from '@nestjs/jwt';
@@ -31,6 +31,7 @@ export class AuthService {
         private jwtService: JwtService
     ) {}
 
+    // HELPERS
     private async sendVerificationCode(email: string) {
         const val = Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -82,6 +83,7 @@ export class AuthService {
         return val;
     }
 
+    // SERVICES
     async signIn(email: string, password: string): Promise<any> {
         const user = await this.usersRepository.findOne({
         where: { email },
@@ -91,7 +93,11 @@ export class AuthService {
             throw new UnauthorizedException('User not found');
         } else {
             if(!user.email_verified_at){
-                throw new UnauthorizedException('Email not verified');
+                console.log(user.email_verified_at);
+                //throw new UnauthorizedException('Email not verified');
+                this.sendVerificationCode(user.email);
+
+                throw new ForbiddenException('Email not verified');
             }
 
             const isMatch = await bcrypt.compare(password, user.password);
@@ -146,7 +152,7 @@ export class AuthService {
 
     async verifyEmail(email: string, code: string): Promise<any> {
         const record = await this.emailVerificationRepository.findOne({
-            where: { email, code },
+            where: { email, code: code },
         });
 
         const [{ now }] = await this.emailVerificationRepository.query('SELECT NOW() as now'); // REALTIME
@@ -250,12 +256,12 @@ export class AuthService {
     }
 
     async verifyResetCode(data: VetifyCodeDto): Promise<any> {
-        const { email, code } = data
+        const { email, otp } = data
 
         const record = await this.passwordResetRepository.findOne({
             where: {
                 email: email,
-                code: code,
+                code: otp,
             }
         })
 

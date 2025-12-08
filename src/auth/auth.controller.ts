@@ -36,19 +36,19 @@ export class AuthController {
         return val;
     }
 
-    @Post('verify-email')
+    @Post('verify-otp')
     verifyEmail(@Body() data : VerifyEmailDto) {
-        const val = this.authService.verifyEmail(data.email, data.code);
+        const val = this.authService.verifyEmail(data.email, data.otp);
         return val;
     }
 
-    @Post('reset-link')
+    @Post('forgot-password')
     resetLink(@Body() data : SendOtpDto) {
         const val = this.authService.resetLink(data);
         return val;
     }
 
-    @Post('verify-reset-code')
+    @Post('forgot-password-token')
     verifyResetCode(@Body() data : VerifyEmailDto) {
         const val = this.authService.verifyResetCode(data);
         return val;
