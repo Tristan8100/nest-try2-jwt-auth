@@ -14,7 +14,7 @@ export class UsersService {
   ) {} // ADDED
 
   // Reusable error handler
-  private async checkEmailExists(email: string, excludeId?: number): Promise<void> {
+  private async checkEmailExists(email: string, excludeId?: string): Promise<void> {
     const query: any = { email };
     
     const existingUser = await this.usersRepository.findOne({ where: query });
@@ -41,7 +41,7 @@ export class UsersService {
     return await this.usersRepository.find();
   }
 
-  async findOne(id: number): Promise<User> {
+  async findOne(id: string): Promise<User> {
     const user = await this.usersRepository.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
@@ -49,7 +49,7 @@ export class UsersService {
     return user;
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findOne(id);
     
     // Check email uniqueness if email is being updated
@@ -61,7 +61,7 @@ export class UsersService {
     return await this.usersRepository.save(user);
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(id: string): Promise<void> {
     const user = await this.findOne(id);
     await this.usersRepository.remove(user);
   }

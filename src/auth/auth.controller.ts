@@ -25,7 +25,7 @@ export class AuthController {
     }
 
     @Post('register')
-    register(@Body() registerDto) {
+    register(@Body() registerDto) { // no dto
         const val = this.authService.register(registerDto);
         return val;
     }

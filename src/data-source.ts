@@ -1,17 +1,17 @@
+import 'reflect-metadata';
 import { DataSource } from 'typeorm';
-import { config } from 'dotenv';
+import * as dotenv from 'dotenv';
+import { User } from './users/entities/user.entity';
 
-config(); // Load .env file
+dotenv.config();
 
 export const AppDataSource = new DataSource({
-  type: 'mysql',
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '3306'),
-  username: process.env.DB_USERNAME || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_DATABASE || 'nest_db',
-  timezone: '+08:00',
-  entities: ['src/**/*.entity{.ts,.js}'],
-  migrations: ['src/migrations/*{.ts,.js}'],
+  type: 'postgres',
+  url: process.env.DATABASE_URL, // use Supabase URL
+  ssl: { rejectUnauthorized: false }, // required for Supabase
   synchronize: false,
+  logging: true,
+  entities: ['./src/**/*.entity.ts'], // or ['./dist/**/*.entity.js'] for compiled
+  migrations: ['./src/migrations/*.ts'],
+  subscribers: [],
 });

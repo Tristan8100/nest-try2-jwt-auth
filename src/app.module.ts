@@ -12,21 +12,23 @@ import { AuthModule } from './auth/auth.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
+
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'mysql',
-        host: configService.get<string>('DB_HOST', 'localhost'),
-        port: configService.get<number>('DB_PORT', 3306),
-        username: configService.get<string>('DB_USERNAME', 'root'),
-        password: configService.get<string>('DB_PASSWORD', ''),
-        database: configService.get<string>('DB_DATABASE', 'nest_db'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: false, // Use migrations instead
-        autoLoadEntities: true,
-      }),
+      useFactory: (configService: ConfigService) => {
+        return {
+          type: 'postgres',
+          url: configService.get<string>('DATABASE_URL'), // Supabase connection string
+          ssl: {
+            rejectUnauthorized: false, // REQUIRED for Supabase
+          },
+          autoLoadEntities: true,
+          synchronize: false, // migrations
+        };
+      },
       inject: [ConfigService],
     }),
+
     UsersModule,
     AuthModule,
   ],

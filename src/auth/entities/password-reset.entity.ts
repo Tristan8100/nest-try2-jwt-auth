@@ -1,30 +1,24 @@
 import { IsEmail } from 'class-validator';
-import { 
-  Entity, 
-  Column, 
-  PrimaryGeneratedColumn, 
-  CreateDateColumn, 
-  UpdateDateColumn 
-} from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity('password_resets')
-export class PasswordReset{
-    @PrimaryGeneratedColumn()
-    id: number;
+export class PasswordReset {
+  @PrimaryGeneratedColumn('uuid') // use UUID for consistency
+  id: string;
 
-    @Column()
-    @IsEmail()
-    email: string;
+  @Column()
+  @IsEmail()
+  email: string;
 
-    @Column()
-    code: string;
+  @Column()
+  code: string;
 
-    @Column()
-    token: string;
+  @Column()
+  token: string;
 
-    @CreateDateColumn()
-    created_at: Date;
+  @CreateDateColumn({ type: 'timestamp with time zone' })
+  created_at: Date;
 
-    @UpdateDateColumn()
-    updated_at: Date;
+  @UpdateDateColumn({ type: 'timestamp with time zone' })
+  updated_at: Date;
 }

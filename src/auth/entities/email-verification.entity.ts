@@ -1,28 +1,22 @@
-import { 
-  Entity, 
-  Column, 
-  PrimaryGeneratedColumn, 
-  CreateDateColumn, 
-  UpdateDateColumn 
-} from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity('email_verifications')
-export class EmailVerification{
-    @PrimaryGeneratedColumn()
-    id: number;
+export class EmailVerification {
+  @PrimaryGeneratedColumn('uuid') // use UUID for consistency
+  id: string;
 
-    @Column()
-    email: string;
+  @Column()
+  email: string;
 
-    @Column()
-    code: string;
+  @Column()
+  code: string;
 
-    @Column({ default: false})
-    verified: boolean;
+  @Column({ default: false })
+  verified: boolean;
 
-    @CreateDateColumn()
-    created_at: Date;
+  @CreateDateColumn({ type: 'timestamp with time zone' })
+  created_at: Date;
 
-    @UpdateDateColumn()
-    updated_at: Date;
+  @UpdateDateColumn({ type: 'timestamp with time zone' })
+  updated_at: Date;
 }
