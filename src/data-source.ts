@@ -1,17 +1,14 @@
 import { DataSource } from 'typeorm';
 import { config } from 'dotenv';
+import { User } from './users/entities/user.entity';
 
 config(); // Load .env file
 
 export const AppDataSource = new DataSource({
-  type: 'mysql',
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '3306'),
-  username: process.env.DB_USERNAME || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_DATABASE || 'nest_db',
-  timezone: '+08:00',
+  type: 'mongodb',                // <- change from 'mysql' to 'mongodb'
+  url: process.env.MONGO_URI,     // <- use your MongoDB connection string
+  synchronize: false,             // fine for dev if you want manual index management
+  logging: true,                  // optional: logs queries
   entities: ['src/**/*.entity{.ts,.js}'],
-  migrations: ['src/migrations/*{.ts,.js}'],
-  synchronize: false,
+  migrations: ['src/migrations/*{.ts,.js}'], // optional for MongoDB
 });

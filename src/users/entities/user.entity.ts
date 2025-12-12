@@ -1,15 +1,16 @@
 import { 
   Entity, 
   Column, 
-  PrimaryGeneratedColumn, 
+  ObjectIdColumn, 
+  ObjectId, 
   CreateDateColumn, 
   UpdateDateColumn 
 } from 'typeorm';
 
 @Entity('users')
 export class User {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @ObjectIdColumn()
+  _id: ObjectId; // MongoDB primary key, auto-generated
 
   @Column({ unique: true })
   email: string;
@@ -20,7 +21,7 @@ export class User {
   @Column()
   password: string;
 
-  @CreateDateColumn({nullable: true})
+  @Column({ type: 'timestamp', nullable: true })
   email_verified_at: Date | null;
 
   @CreateDateColumn()

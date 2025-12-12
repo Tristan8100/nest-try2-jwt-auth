@@ -15,14 +15,12 @@ import { AuthModule } from './auth/auth.module';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        type: 'mysql',
-        host: configService.get<string>('DB_HOST', 'localhost'),
-        port: configService.get<number>('DB_PORT', 3306),
-        username: configService.get<string>('DB_USERNAME', 'root'),
-        password: configService.get<string>('DB_PASSWORD', ''),
-        database: configService.get<string>('DB_DATABASE', 'nest_db'),
+        type: 'mongodb', // change from 'mysql' to 'mongodb'
+        url: configService.get<string>('MONGO_URI'), // use your URI from .env
+        synchronize: false, // collections are auto-created, indexes must be manual
+        logging: true,
+        useNewUrlParser: true, // optional, supported
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: false, // Use migrations instead
         autoLoadEntities: true,
       }),
       inject: [ConfigService],
