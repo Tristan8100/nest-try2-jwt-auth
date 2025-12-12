@@ -106,7 +106,7 @@ export class AuthService {
             throw new UnauthorizedException('Invalid credentials, password does not match');
             }
 
-            const payload = { sub: user.id, email: user.email };
+            const payload = { id: user.id, email: user.email }; //changed to id to match the rolesGuard
             const token = this.jwtService.sign(payload);
 
             return { 

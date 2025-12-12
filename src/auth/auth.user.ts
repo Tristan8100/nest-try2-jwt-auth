@@ -16,7 +16,15 @@ export class RolesGuard implements CanActivate {
         throw new UnauthorizedException('User not found');
         }
 
+        if (!user.id) {
+        throw new UnauthorizedException('User not found');
+        } //added checking for undefined
+
         const val = await this.userService.findOne(user.id);
+
+        console.log('User ID', user.id);
+
+        console.log('User from DB:', val);
 
         if (!val) {
         throw new UnauthorizedException('User not found');
